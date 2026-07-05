@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# YOLO 权重 (首次运行自动下载)
+*.pt
+
+# 触发事件的录像和快照
+events/
+
+# 警报音频 (用户自己录制/生成)
+sounds/*.wav
