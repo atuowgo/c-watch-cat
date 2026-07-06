@@ -35,6 +35,7 @@ DEFAULTS = {
         "trigger_on": "scratch",  # scratch | squat | both
     },
     "alert": {
+        "enabled": True,  # false = 影子模式: 只记录事件不出声, 用于上线初期审核误报
         "sound": "sounds/alert.wav",
         "cooldown": 45,   # 全局冷却: 家里只有一只猫, 所有房间共享冷却时间
         "repeat": 2,
@@ -87,6 +88,8 @@ def _normalize(cfg):
         cam.setdefault("width", None)
         cam.setdefault("height", None)
         cam.setdefault("alert_url", None)  # None = 在主机本地播放吼声
+        # 每路可覆盖行为阈值 (不同手机画质噪声不同, 如 scratch_motion_threshold)
+        cam.setdefault("behavior", {})
         cam["source"] = _normalize_source(cam.get("source", 0))
         zones = dict(cam.get("zones") or {})
         zones.setdefault("litter_box", [])

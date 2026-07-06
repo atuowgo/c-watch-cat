@@ -119,7 +119,9 @@ class CameraPipeline:
         self.alert_url = cam_cfg["alert_url"]
         self.stream = CameraStream(self.name, cam_cfg["source"],
                                    cam_cfg["width"], cam_cfg["height"])
-        self.analyzer = BehaviorAnalyzer(**behavior_cfg)
+        # 每路可覆盖全局行为阈值 (不同手机的画质噪声不同)
+        merged_behavior = {**behavior_cfg, **cam_cfg.get("behavior", {})}
+        self.analyzer = BehaviorAnalyzer(**merged_behavior)
         self.recorder = EventRecorder(
             os.path.join(rec_cfg["dir"], self.name), fps,
             rec_cfg["pre_seconds"], rec_cfg["post_seconds"],
@@ -220,7 +222,7 @@ def run(cfg, show=False):
                            det_cfg["imgsz"])
     coordinator = AlertCoordinator(
         cfg["alert"]["sound"], cfg["alert"]["cooldown"],
-        cfg["alert"]["repeat"])
+        cfg["alert"]["repeat"], enabled=cfg["alert"].get("enabled", True))
 
     pipes = [CameraPipeline(cam, cfg["behavior"], cfg["recording"])
              for cam in cfg["cameras"]]

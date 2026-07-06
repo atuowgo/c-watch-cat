@@ -12,6 +12,8 @@ cameras:
     zones:
       litter_box: []  # 用 python tools/calibrate_zone.py --camera living_room 画
       ignore: []      # 食盆附近建议画进来, 猫"埋食物"的动作和扒地一样, 会误报
+    # behavior:       # 可按路覆盖全局阈值: 老手机画质噪点大导致误报时,
+    #   scratch_motion_threshold: 6.0   # 单独调高这一路的运动量阈值
 
   # ---- 二期: 猫转移阵地后, 逐个房间加手机 (去掉注释即可) ----
   # - name: bedroom
@@ -44,6 +46,8 @@ behavior:
                        # both:    先扒地后蹲下才报 (误报最少但介入最晚)
 
 alert:
+  enabled: false           # 上线第一周建议保持影子模式: 只记录事件不出声,
+                           # 回看 events/ 确认没有误报后再改成 true 放开吼声
   sound: sounds/alert.wav  # 主机兜底用 (手机放声服务不可达时); 建议也换成吼声录音
   cooldown: 45             # 全局冷却: 猫跨房间不会被连吼两次
   repeat: 2                # 每次触发连播 2 遍

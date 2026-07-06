@@ -73,3 +73,37 @@ def test_alert_global_cooldown():
     assert not c.maybe_fire(alert_url=None, now=105.0)
     # 冷却过后再触发 -> 放行
     assert c.maybe_fire(alert_url=None, now=111.0)
+
+
+def test_shadow_mode_records_without_sound():
+    """影子模式: 触发照常返回 True (事件要记录), 但不派发放声."""
+    c = AlertCoordinator(sound_path=None, cooldown=10, repeat=1,
+                         enabled=False)
+    fired_dispatch = []
+    c._dispatch = lambda url: fired_dispatch.append(url)  # 出声即失败
+    assert c.maybe_fire(alert_url=None, now=100.0)
+    assert not c.maybe_fire(alert_url=None, now=105.0)  # 冷却照常生效
+    assert fired_dispatch == []
+
+
+def test_per_camera_behavior_override(tmp_path):
+    """老手机噪点大, 单独调高该路的运动量阈值."""
+    path = write(tmp_path, """
+cameras:
+  - name: living_room
+    source: 0
+    behavior:
+      scratch_motion_threshold: 6.0
+  - name: bedroom
+    source: 1
+""")
+    cfg = load_config(path)
+    merged = {**cfg["behavior"], **cfg["cameras"][0]["behavior"]}
+    assert merged["scratch_motion_threshold"] == 6.0
+    assert merged["scratch_min_seconds"] == cfg["behavior"]["scratch_min_seconds"]
+    assert cfg["cameras"][1]["behavior"] == {}  # 没写覆盖 = 用全局值
+
+
+def test_alert_enabled_default_true():
+    cfg = load_config(None)
+    assert cfg["alert"]["enabled"] is True

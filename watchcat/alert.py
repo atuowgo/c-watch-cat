@@ -65,22 +65,29 @@ class AlertCoordinator:
     """全局冷却 + 路由到对应房间的手机 (或主机本地) 播放."""
 
     def __init__(self, sound_path, cooldown=45.0, repeat=2,
-                 http_timeout=5.0):
+                 http_timeout=5.0, enabled=True):
         self.cooldown = cooldown
         self.repeat = max(1, repeat)
         self.http_timeout = http_timeout
+        self.enabled = enabled  # False = 影子模式: 事件照常记录, 但不出声
         self._local = LocalPlayer(sound_path)
         self._last_fired = None
         self._lock = threading.Lock()
+        if not enabled:
+            log.warning("影子模式已开启: 只记录事件不播放吼声 "
+                        "(审核 events/ 里的误报后再打开 alert.enabled)")
 
     def maybe_fire(self, alert_url=None, now=None):
-        """不在冷却期则触发警报, 返回是否真的触发了."""
+        """不在冷却期则触发警报, 返回是否真的触发了 (触发≠出声, 见影子模式)."""
         now = time.time() if now is None else now
         with self._lock:
             if (self._last_fired is not None
                     and now - self._last_fired < self.cooldown):
                 return False
             self._last_fired = now
+        if not self.enabled:
+            log.info("影子模式: 本次触发只记录, 不出声")
+            return True
         threading.Thread(
             target=self._dispatch, args=(alert_url,), daemon=True).start()
         return True

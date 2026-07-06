@@ -1,0 +1,369 @@
+<title>watch-cat 软件工程可行性评审</title>
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --surface: #FFFFFF;
+    --ink: #212723;
+    --muted: #616B64;
+    --line: #E3E7E1;
+    --accent: #177368;
+    --accent-soft: #E4F0EE;
+    --ok: #2F7D46;
+    --ok-soft: #E5F2E8;
+    --warn: #A96A0B;
+    --warn-soft: #F7EEDC;
+    --risk: #B0392E;
+    --risk-soft: #F8E7E4;
+    --code-bg: #F1F3EF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131715;
+      --surface: #1B211E;
+      --ink: #E4E9E5;
+      --muted: #98A39C;
+      --line: #2B332E;
+      --accent: #53C2B2;
+      --accent-soft: #1D3330;
+      --ok: #79C98B;
+      --ok-soft: #1E3325;
+      --warn: #DFAC55;
+      --warn-soft: #3A2E17;
+      --risk: #E28177;
+      --risk-soft: #3D211E;
+      --code-bg: #232B27;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #131715; --surface: #1B211E; --ink: #E4E9E5; --muted: #98A39C;
+    --line: #2B332E; --accent: #53C2B2; --accent-soft: #1D3330;
+    --ok: #79C98B; --ok-soft: #1E3325; --warn: #DFAC55; --warn-soft: #3A2E17;
+    --risk: #E28177; --risk-soft: #3D211E; --code-bg: #232B27;
+  }
+  :root[data-theme="light"] {
+    --bg: #FAFAF7; --surface: #FFFFFF; --ink: #212723; --muted: #616B64;
+    --line: #E3E7E1; --accent: #177368; --accent-soft: #E4F0EE;
+    --ok: #2F7D46; --ok-soft: #E5F2E8; --warn: #A96A0B; --warn-soft: #F7EEDC;
+    --risk: #B0392E; --risk-soft: #F8E7E4; --code-bg: #F1F3EF;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    line-height: 1.75;
+    margin: 0;
+    font-size: 15.5px;
+  }
+  .page { max-width: 920px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  h1, h2, h3 {
+    font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+    line-height: 1.35;
+    text-wrap: balance;
+    margin: 0;
+  }
+  h1 { font-size: 2rem; font-weight: 700; }
+  h2 {
+    font-size: 1.35rem; font-weight: 700;
+    margin: 3.5rem 0 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+  h2 .no { color: var(--accent); margin-right: .6rem; font-variant-numeric: tabular-nums; }
+  h3 { font-size: 1.08rem; font-weight: 700; margin: 2rem 0 .6rem; }
+  h3 .no { color: var(--accent); margin-right: .5rem; }
+  p { margin: 0 0 1rem; }
+  .prose { max-width: 44rem; }
+
+  .doc-meta {
+    display: flex; flex-wrap: wrap; gap: .5rem 1.5rem;
+    color: var(--muted); font-size: .85rem;
+    margin: .8rem 0 0;
+  }
+  .doc-meta b { color: var(--ink); font-weight: 600; }
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: .14em;
+    font-size: .75rem; color: var(--accent); font-weight: 600;
+    margin-bottom: .6rem;
+  }
+
+  .chip {
+    display: inline-block; padding: .1rem .6rem; border-radius: 999px;
+    font-size: .78rem; font-weight: 600; white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .chip.ok   { color: var(--ok);   background: var(--ok-soft); }
+  .chip.warn { color: var(--warn); background: var(--warn-soft); }
+  .chip.risk { color: var(--risk); background: var(--risk-soft); }
+  .chip.plan { color: var(--muted); background: var(--code-bg); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .verdict {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 8px; padding: 1.1rem 1.2rem;
+    display: flex; flex-direction: column; gap: .5rem;
+  }
+  .verdict .stage { font-size: .8rem; color: var(--muted); letter-spacing: .08em; }
+  .verdict .name { font-weight: 700; font-size: 1.05rem; }
+  .verdict .why { font-size: .88rem; color: var(--muted); line-height: 1.6; }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 2.2rem; margin: 1.8rem 0; padding: 1.1rem 1.3rem; background: var(--accent-soft); border-radius: 8px; }
+  .stat .v { font-size: 1.45rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; font-family: ui-monospace, "SF Mono", Consolas, monospace; }
+  .stat .k { font-size: .8rem; color: var(--muted); }
+
+  .tablewrap { overflow-x: auto; margin: 1.2rem 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { text-align: left; padding: .55rem .9rem; border-top: 1px solid var(--line); vertical-align: top; }
+  thead th { border-top: none; background: var(--code-bg); color: var(--muted); font-weight: 600; font-size: .8rem; white-space: nowrap; }
+  td.num { font-variant-numeric: tabular-nums; font-family: ui-monospace, "SF Mono", Consolas, monospace; white-space: nowrap; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .84em; background: var(--code-bg);
+    padding: .1em .4em; border-radius: 4px;
+  }
+
+  .arch {
+    display: grid; grid-template-columns: 1fr auto 1.4fr; gap: 1rem; align-items: stretch;
+    margin: 1.4rem 0; font-size: .85rem;
+  }
+  .arch-col { display: flex; flex-direction: column; gap: .7rem; }
+  .arch-box {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    padding: .7rem .9rem;
+  }
+  .arch-box .t { font-weight: 700; }
+  .arch-box .d { color: var(--muted); font-size: .8rem; line-height: 1.55; }
+  .arch-box.hub { border-color: var(--accent); }
+  .arch-flow { display: flex; flex-direction: column; justify-content: center; gap: .5rem; color: var(--accent); font-size: .78rem; text-align: center; }
+  @media (max-width: 640px) { .arch { grid-template-columns: 1fr; } .arch-flow { flex-direction: row; justify-content: center; } }
+
+  .latency { display: flex; border-radius: 6px; overflow: hidden; margin: 1.2rem 0 .4rem; height: 2.6rem; border: 1px solid var(--line); }
+  .latency .seg { display: flex; align-items: center; justify-content: center; font-size: .72rem; color: #fff; white-space: nowrap; overflow: hidden; padding: 0 .3rem; }
+  .latency-legend { font-size: .8rem; color: var(--muted); margin-bottom: 1rem; }
+
+  .defense { border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 8px 8px 0; padding: .9rem 1.2rem; margin: 1rem 0; }
+  .defense .t { font-weight: 700; margin-bottom: .2rem; }
+  .defense .t .tag { font-size: .72rem; color: var(--accent); margin-right: .5rem; letter-spacing: .1em; }
+  .defense p { margin: 0; font-size: .9rem; color: var(--muted); }
+
+  ul { padding-left: 1.4rem; margin: 0 0 1rem; }
+  li { margin-bottom: .4rem; }
+  li::marker { color: var(--accent); }
+
+  .note {
+    background: var(--warn-soft); border-radius: 8px; padding: .9rem 1.2rem;
+    font-size: .9rem; margin: 1.2rem 0;
+  }
+  .note b:first-child { color: var(--warn); }
+
+  footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .82rem; }
+</style>
+
+<div class="page">
+  <div class="eyebrow">Engineering Feasibility Review</div>
+  <h1>watch-cat 猫如厕行为干预系统 · 可行性评审</h1>
+  <div class="doc-meta">
+    <span>版本 <b>v1.0</b></span>
+    <span>日期 <b>2026-07-06</b></span>
+    <span>代码分支 <b>claude/cat-litter-detection-twedi6</b></span>
+    <span>状态 <span class="chip ok">待评审</span></span>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">1</span>结论摘要</h2>
+  <p class="prose">系统目标：在猫做出「拉屎前兆」（原地扒地 → 蹲姿）的 2–3 秒内，从案发房间的设备播放主人吼声，利用其既有条件反射将其劝回猫砂盆。三阶段总体判定如下：</p>
+
+  <div class="verdicts">
+    <div class="verdict">
+      <span class="stage">一期 · 单手机定点</span>
+      <span class="name">可行 <span class="chip ok">代码已实现</span></span>
+      <span class="why">全部依赖成熟组件（YOLO 预训练 + 帧差分 + HTTP），无需训练模型。17 个单元测试通过。成本 ≈ ¥50。</span>
+    </div>
+    <div class="verdict">
+      <span class="stage">二期 · 多手机组网</span>
+      <span class="name">可行 <span class="chip ok">代码已实现</span></span>
+      <span class="why">与一期同构，扩容 = 配置加条目。星型拓扑集中推理，4 路约占主机 0.5 个 CPU 核，容量余量大。</span>
+    </div>
+    <div class="verdict">
+      <span class="stage">终极形态 · 移动机器人</span>
+      <span class="name">有条件可行 <span class="chip warn">设计阶段</span></span>
+      <span class="why">R1 反应式跟随基于成品平台（RoboMaster EP）可落地；避障是成熟问题，<b>避屎</b>依赖三层防线设计（见 §4.3），视觉识屎为长期任务。</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="v">17</div><div class="k">单元测试（全部通过）</div></div>
+    <div class="stat"><div class="v">≤3s</div><div class="k">扒地→吼声 端到端延迟预算</div></div>
+    <div class="stat"><div class="v">¥50</div><div class="k">一期新增硬件成本</div></div>
+    <div class="stat"><div class="v">~0.5核</div><div class="k">4 路视频流的主机 CPU 占用</div></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">2</span>系统架构与代码现状</h2>
+  <p class="prose">每台旧手机是「摄像头 + 音箱」二合一哑终端，全部算法集中在主机。这一决策同时解决了三个问题：旧手机性能参差不齐无法跑模型、吼声必须从案发现场发出、以及 §4.1 的设备异构问题（差异被隔离在"视频流质量"单一维度内）。</p>
+
+  <div class="arch">
+    <div class="arch-col">
+      <div class="arch-box"><div class="t">手机节点 × N（每房间）</div><div class="d">IP Webcam 推视频流<br>Termux 放声服务（HTTP 触发播放吼声）</div></div>
+      <div class="arch-box"><div class="t">调试源</div><div class="d">本机摄像头 / 录像文件回放（回归测试用）</div></div>
+    </div>
+    <div class="arch-flow"><span>视频流 →</span><span>← HTTP 放声</span></div>
+    <div class="arch-col">
+      <div class="arch-box hub"><div class="t">主机（家中任一电脑）</div><div class="d">
+        每路独立采集线程（只留最新帧，断流自动重连）<br>
+        → YOLO 猫检测（预训练，免训练）<br>
+        → 行为状态机（静止 → 扒地 → 蹲姿，纯 Python）<br>
+        → 警报调度（全局冷却 45s + 就近路由 + 影子模式）<br>
+        → 事件录像 events/&lt;房间&gt;/（触发前 8s + 后 5s）
+      </div></div>
+    </div>
+  </div>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>模块</th><th>职责</th><th>状态</th><th>测试覆盖</th></tr></thead>
+    <tbody>
+      <tr><td><code>behavior.py</code></td><td>行为状态机：静止 / 扒地 / 蹲姿判定与触发</td><td><span class="chip ok">已实现</span></td><td>9 个用例（含边界：睡觉不触发、离场复位）</td></tr>
+      <tr><td><code>config.py</code></td><td>配置归一化（单/多摄像头两种写法）、每路阈值覆盖</td><td><span class="chip ok">已实现</span></td><td>6 个用例</td></tr>
+      <tr><td><code>alert.py</code></td><td>全局冷却、就近放声路由、影子模式、主机兜底</td><td><span class="chip ok">已实现</span></td><td>2 个用例（冷却 / 影子模式）</td></tr>
+      <tr><td><code>main.py</code></td><td>多路采集管线、断流重连、帧差运动量</td><td><span class="chip ok">已实现</span></td><td>依赖 OpenCV，见 §5 集成测试缺口</td></tr>
+      <tr><td><code>detector.py</code></td><td>YOLO 猫检测封装（COCO cat 类）</td><td><span class="chip ok">已实现</span></td><td>依赖预训练权重，不单测</td></tr>
+      <tr><td><code>recorder.py</code></td><td>滚动缓冲事件录像</td><td><span class="chip ok">已实现</span></td><td>未覆盖</td></tr>
+      <tr><td><code>phone_sound_server.py</code></td><td>手机端放声服务（Termux）</td><td><span class="chip ok">已实现</span></td><td>手工验收（浏览器访问 /play）</td></tr>
+      <tr><td>推送通知 / 网页面板 / 热力图</td><td>远程感知与数据闭环</td><td><span class="chip plan">规划</span></td><td>—</td></tr>
+    </tbody>
+  </table></div>
+
+  <p class="prose">可测性设计：状态机与配置层是<b>纯 Python、零依赖</b>，与 IO 层（OpenCV / YOLO / HTTP）严格分离——不装任何重依赖即可跑全部 17 个单测；状态机按<b>时间戳窗口</b>而非帧数驱动，这是 §4.1 帧率异构的基础。</p>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">3</span>关键链路延迟预算</h2>
+  <p class="prose">干预必须发生在「扒地开始之后、开拉之前」。猫从扒地到进入排便通常有 5–15 秒，预算如下（从第一爪扒地起算）：</p>
+
+  <div class="latency">
+    <div class="seg" style="flex: 1500; background: var(--accent);">行为确认 1.5s</div>
+    <div class="seg" style="flex: 400; background: #4A9A8E;">检测周期 ≤0.4s</div>
+    <div class="seg" style="flex: 400; background: #7AB3A9;">推流延迟 ~0.4s</div>
+    <div class="seg" style="flex: 400; background: #A3CCC4;">放声启动 ~0.4s</div>
+  </div>
+  <div class="latency-legend">合计 ≈ 2.7s ± 0.5s，对 5–15s 的行为窗口余量充足</div>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>环节</th><th>预算</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>行为累计确认</td><td class="num">1.5 s</td><td>设计值 <code>scratch_min_seconds</code>——是防误报的保险费，不是性能损耗；调低即更快但更容易误报（§4.2 权衡）</td></tr>
+      <tr><td>检测周期</td><td class="num">≤0.4 s</td><td>YOLO 每路 2–3 次/秒（<code>interval: 5</code>），行为持续数秒故无需逐帧检测</td></tr>
+      <tr><td>手机推流延迟</td><td class="num">0.2–0.5 s</td><td>采集线程只保留最新帧，主动丢弃积压缓冲，避免 RTSP 常见的秒级滞后</td></tr>
+      <tr><td>HTTP 触发 + 播放启动</td><td class="num">0.2–0.5 s</td><td>局域网 RTT 忽略不计，主要是播放器进程启动</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">4</span>异常场景分析</h2>
+
+  <h3><span class="no">4.1</span>设备异构：iPhone / Android / 分辨率差异</h3>
+  <p class="prose">架构已把异构限制在最小面：手机不参与计算，只是视频源。剩余的差异逐项分析：</p>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>差异维度</th><th>影响</th><th>对策</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td>分辨率不同</td><td>大部分算法不受影响</td><td>关键阈值均按<b>比例</b>设计：静止容差 = 0.3×框宽，蹲姿 = 高宽比；YOLO 统一 letterbox 缩放到 <code>imgsz</code>。天然分辨率无关</td><td><span class="chip ok">已实现</span></td></tr>
+      <tr><td>画质噪点 / 压缩伪影</td><td>唯一分辨率敏感项：帧差运动量 <code>scratch_motion_threshold</code>，老手机噪点会抬高底噪导致误报</td><td>每路摄像头可独立覆盖行为阈值（<code>cameras[].behavior</code>）；配合影子模式逐路标定</td><td><span class="chip ok">已实现</span></td></tr>
+      <tr><td>同上（自动化）</td><td>手工逐路调参繁琐</td><td>无猫时段自动测量该路噪声底，阈值 = 底噪 + 固定余量</td><td><span class="chip plan">规划</span></td></tr>
+      <tr><td>帧率不同（15 vs 30 fps）</td><td>状态机不受影响（按时间戳窗口，非帧数）</td><td>帧差幅度随帧间隔略变 → 规划固定 10Hz 重采样后再算运动量，彻底与帧率解耦</td><td><span class="chip plan">规划</span></td></tr>
+      <tr><td>换机 / 换分辨率后区域失效</td><td>猫砂盆多边形以像素存储，分辨率一变即错位</td><td>区域坐标改为 0–1 归一化存储，加载时按实际分辨率还原</td><td><span class="chip plan">规划</span></td></tr>
+      <tr><td><b>iPhone 生态限制</b></td><td>iOS 无 Termux、无常驻后台：放声服务做不了；推流 App（如 IP Camera Lite）必须保持前台</td><td>iPhone 降级为<b>「只当眼睛、不当嘴」</b>：推流用 RTSP App + 引导式访问防锁屏；该房间的放声由另一台安卓机或 ¥20 音箱（接主机蓝牙/有线）承担。结论：安卓优先，iPhone 可用但角色受限</td><td><span class="chip warn">已论证</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3><span class="no">4.2</span>识别的快与准：避免"误杀"伤害猫</h3>
+  <p class="prose"><b>先算代价的不对称性：</b>漏报的代价是地板上多一坨（可清理）；误报的代价是猫无辜挨吼——反复误吼会造成焦虑、让吼声信号脱敏，甚至让它把"被吼"与错误的场景关联（比如在窗边晒太阳被吼）。因此设计原则定为<b>宁漏勿错（Precision First）</b>，所有机制围绕这一点：</p>
+
+  <div class="defense"><div class="t"><span class="tag">已实现</span>多证据门控</div>
+  <p>触发必须同时满足：YOLO 确认是猫（人/狗/扫地机不触发）＋ 身体静止 2.5s ＋ 框内高运动量持续 1.5s；可选再叠加蹲姿（<code>trigger_on: both</code>）。猫砂盆/食盆白名单区域直接豁免，45 秒全局冷却封顶骚扰频率。</p></div>
+
+  <div class="defense"><div class="t"><span class="tag">已实现</span>影子模式分级上线</div>
+  <p>第 1 周 <code>alert.enabled: false</code>：系统完整运行、只记录不出声；人工回看 events/ 逐条标注真/误报并调阈值。达到「误报 &lt; 1 次/天」的验收线后，第 2 周先放轻提示音，第 3 周才上吼声。<b>猫在系统被证明可靠之前，一声都不会听到。</b></p></div>
+
+  <div class="defense"><div class="t"><span class="tag">规划</span>干预烈度阶梯</div>
+  <p>先播一声轻"咳"，10 秒内行为未停止再升级为吼声。即便发生残余误报，猫听到的也只是轻声——把误报伤害从"挨吼"降级为"可忽略"。</p></div>
+
+  <div class="defense"><div class="t"><span class="tag">规划</span>效果度量闭环 + 每日上限</div>
+  <p>触发后 2 分钟内猫进入猫砂盆区域 = 干预成功，自动统计成功率与误报率，用数据而非感觉判断系统是否在变好；每日触发上限（如 10 次）作为极端情况的硬保险丝。</p></div>
+
+  <p class="prose"><b>精度天花板与升级路径：</b>规则法（帧差 + 几何比例）的优势是零训练、可解释、纯 Python 可测；若影子模式数据显示某类场景（如激烈玩耍）始终无法用阈值区分，events/ 里积累的自家猫标注片段正好是训练集——可微调一个轻量二分类器（扒地 / 非扒地）或引入动物姿态估计。<b>先用规则法收集数据，数据反过来决定要不要上模型</b>，避免过早投入训练成本。</p>
+
+  <h3><span class="no">4.3</span>机器人：自动避障，以及"绝不能压到屎"</h3>
+  <p class="prose"><b>避障是成熟问题</b>——扫地机器人行业已解决，照抄传感器组合即可，风险在工程量而非可行性：速度上限 + 前向 ToF 反应式急停（R1 级），升级到激光雷达代价地图与虚拟墙（R3 级），碰撞条作最后兜底。</p>
+  <p class="prose"><b>避屎才是真正的难点</b>，因为屎是小尺寸、低对比度目标，纯视觉识别很难可靠（iRobot 为了给 j7 的避屎功能背书，专门训练了数千张宠物粪便照片）。本设计不把宝押在视觉上，而是三层防线，且前两层不依赖任何识别能力：</p>
+
+  <div class="defense"><div class="t"><span class="tag">防线一</span>事件驱动的污染区（本系统的独特优势）</div>
+  <p>这套系统的本职就是盯着猫拉屎——<b>如果干预失败，系统精确知道屎在哪</b>：触发事件的坐标即污染坐标。该位置自动标记为禁区，机器人绕行，直到人工在面板上确认"已清理"才解除。历史案发热力图上的高发点则常设为慢速谨慎区。</p></div>
+
+  <div class="defense"><div class="t"><span class="tag">防线二</span>行为策略：不走可能有屎的路</div>
+  <p>屎出现在猫屁股后方 → 机器人<b>永远从侧前方接近，绝不横穿猫的身后区域</b>；始终保持 ≥1.5m 距离；凡是"触发过事件且猫已离开、尚未人工确认"的区域一律不驶入。原则：<b>不确定干不干净的地方就不进去。</b></p></div>
+
+  <div class="defense"><div class="t"><span class="tag">防线三</span>视觉识别兜底（长期任务）</div>
+  <p>前向摄像头跑小目标检测作为最后一道保险。需要自建数据集（含仿真样本），列为 R3 阶段任务。<b>在它成熟之前，防线一 + 二已足以让 R1 级机器人安全上线</b>——这是"避屎"不阻塞机器人立项的关键论证。</p></div>
+
+  <p class="prose">此外机器人还有一个一二期都没有的风险：<b>观察者效应</b>——被机器跟着的猫行为会变（应激、躲床底、换更隐蔽的地点作案）。对策为 1–2 周驯化期（静止共处 → 缓慢移动 → 跟随）加速度/噪音上限，并保留随时退回"多点固定布控"的能力。</p>
+
+  <h3><span class="no">4.4</span>其他异常场景清单</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>场景</th><th>影响</th><th>对策</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td>手机 Wi-Fi 掉线 / 重启</td><td>该路失明</td><td>每路独立线程断流自动重连（3s 退避），单路故障不影响其他房间</td><td><span class="chip ok">已实现</span></td></tr>
+      <tr><td>手机 IP 漂移</td><td>配置失效、全路失联</td><td>路由器 DHCP 静态租约绑定固定 IP（部署清单必做项）</td><td><span class="chip ok">已写入文档</span></td></tr>
+      <tr><td><b>老手机 7×24 插电：发热、电池鼓包</b></td><td><b>安全隐患（起火风险）</b></td><td>原装充电器、避开阳光直射与织物覆盖、优先选电池健康度高的手机、720p 限流推流降发热；部署后前几天手动摸温；有条件选支持旁路供电的机型</td><td><span class="chip warn">运维规程</span></td></tr>
+      <tr><td>主机宕机 / 进程崩溃</td><td>整系统失效且无人知晓</td><td>systemd 守护自动拉起 + 每日心跳推送（"我还活着"），静默即异常</td><td><span class="chip plan">规划</span></td></tr>
+      <tr><td>多猫家庭 / 客猫</td><td>吼错猫、干预对象混淆</td><td>当前取最高置信度个体（单猫家庭无影响）；多猫需按花色直方图做个体重识别，只盯"惯犯"</td><td><span class="chip plan">规划</span></td></tr>
+      <tr><td>吼声录音脱敏</td><td>核心干预手段失效</td><td>多段不同录音随机播放；推送通知让主人远程真人喊话补强（IP Webcam 支持双向对讲）；干预成功率指标（§4.2）可量化脱敏趋势</td><td><span class="chip plan">规划</span></td></tr>
+      <tr><td>夜间 / 逆光</td><td>猫常凌晨作案，检测失效</td><td>案发房间留 ¥10 小夜灯（猫不惧微光）；或该房间换带红外的 USB 摄像头接主机</td><td><span class="chip ok">已写入文档</span></td></tr>
+      <tr><td>摄像头被猫拱歪 / 遮挡</td><td>标定区域错位、静默失明</td><td>支架固定为主；规划画面突变检测（与标定快照比对）+ 推送告警</td><td><span class="chip plan">规划</span></td></tr>
+      <tr><td>事件录像撑爆磁盘</td><td>主机存储耗尽</td><td>events/ 按总大小滚动清理（保留最近 N GB）</td><td><span class="chip plan">规划</span></td></tr>
+      <tr><td>隐私</td><td>家中多路摄像头常开</td><td>全部流量仅限局域网、不开端口转发/公网映射；HTTP 明文在家庭内网可接受，禁止暴露公网</td><td><span class="chip warn">部署红线</span></td></tr>
+      <tr><td>猫行为进化：不扒地直接拉</td><td>前兆特征消失，系统漏报</td><td><code>trigger_on: squat</code> 蹲姿判据不依赖扒地，作为兜底；热力图持续复盘行为变化</td><td><span class="chip ok">已实现</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">5</span>测试与验收策略</h2>
+  <ul class="prose">
+    <li><b>单元测试（现状）</b>：17 个用例覆盖状态机全部状态迁移（含"睡觉不触发""离场复位"等边界）、配置归一化、全局冷却、影子模式。核心逻辑层零重依赖，CI 秒级可跑。</li>
+    <li><b>集成测试（缺口 → 规划）</b>：<code>main.py</code> 原生支持视频文件输入；影子模式期间把真实的命中/误报片段沉淀为<b>回归视频集</b>，每次调阈值后回放全集，防止"修好一个误报、弄坏三个命中"。这是本项目最有价值的测试资产。</li>
+    <li><b>分级上线</b>：影子模式（只记录）→ 轻提示音 → 吼声，每级有量化晋级条件。</li>
+  </ul>
+  <div class="tablewrap"><table>
+    <thead><tr><th>验收指标</th><th>目标</th><th>度量方式</th></tr></thead>
+    <tbody>
+      <tr><td>端到端干预延迟</td><td class="num">≤ 3 s</td><td>事件录像时间戳：扒地起始帧 → 放声日志</td></tr>
+      <tr><td>误报率（放声前提条件）</td><td class="num">&lt; 1 次/天</td><td>影子模式人工标注 events/</td></tr>
+      <tr><td>干预成功率</td><td class="num">&gt; 80%</td><td>触发后 2 分钟内猫进入猫砂盆区域</td></tr>
+      <tr><td>行为矫正效果</td><td class="num">30 天内地板作案 −80%</td><td>事件日志周环比</td></tr>
+      <tr><td>节点可用性</td><td class="num">&gt; 95%</td><td>断流重连日志统计</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">6</span>风险登记册</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>风险</th><th>概率</th><th>影响</th><th>缓解</th></tr></thead>
+    <tbody>
+      <tr><td>误报伤害猫的信任（最高优先级）</td><td><span class="chip warn">中</span></td><td><span class="chip risk">高</span></td><td>影子模式强制前置 + 烈度阶梯 + 每日上限（§4.2）</td></tr>
+      <tr><td>吼声录音脱敏</td><td><span class="chip warn">中</span></td><td><span class="chip risk">高</span></td><td>多录音随机 + 远程真人对讲 + 成功率指标监控（§4.4）</td></tr>
+      <tr><td>老手机长期插电的电池安全</td><td><span class="chip ok">低</span></td><td><span class="chip risk">高</span></td><td>运维规程（§4.4），此项为部署硬要求</td></tr>
+      <tr><td>老手机推流稳定性</td><td><span class="chip risk">高</span></td><td><span class="chip warn">中</span></td><td>断流重连已实现；单路故障隔离；心跳监控（规划）</td></tr>
+      <tr><td>机器人引发猫应激</td><td><span class="chip warn">中</span></td><td><span class="chip warn">中</span></td><td>驯化期 + 速度/噪音上限 + 可回退多点布控（§4.3）</td></tr>
+      <tr><td>机器人压到屎</td><td><span class="chip warn">中</span></td><td><span class="chip risk">高</span></td><td>三层防线，前两层不依赖视觉识别（§4.3）</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">7</span>总体结论</h2>
+  <p class="prose">一、二期<b>可行且代码已就绪</b>：无自训模型、无自研协议、无非成熟依赖，最大的工程风险（设备异构、误报伤猫）分别被"集中推理 + 比例阈值 + 每路覆盖"和"影子模式分级上线"结构性化解。建议立即按部署清单启动一期，影子模式跑满一周再放声。</p>
+  <p class="prose">终极形态机器人<b>建议在二期热力图数据积累 1–2 个月后立项</b>：热力图直接决定巡逻策略与污染区先验，且届时感知代码已在多路实战中打磨成熟。R1 级（成品平台 + 反应式跟随 + 防线一/二避屎）为第一个可交付里程碑；纯视觉识屎不设为上线前提。</p>
+  <p class="prose">最后重申系统边界：本系统治标（第一时间抓现行），猫砂盆卫生/数量/位置与兽医检查治本，两者并行才是完整方案。</p>
+
+  <footer>watch-cat · 软件工程可行性评审 v1.0 · 2026-07-06 · 仓库路径 docs/feasibility-review.html</footer>
+</div>
