@@ -1,16 +1,35 @@
-# watch-cat 配置文件
-# 所有阈值都有合理默认值, 先跑起来, 再根据 events/ 里保存的误报片段微调。
+# watch-cat 配置文件 (旧手机组网版)
+#
+# 每台旧手机 = 摄像头 (IP Webcam 推流) + 音箱 (Termux 放声服务)。
+# 一期只配一台; 二期猫换房间作案后, 加一台手机就是加一个条目。
+# 手机端安装步骤见 README「手机节点安装」一节。
 
-camera:
-  source: 0          # 摄像头索引; 也可以填 RTSP 地址 "rtsp://..." 或视频文件路径
-  width: 1280
-  height: 720
+cameras:
+  # ---- 一期: 案发高发区的第一台手机 ----
+  - name: living_room                          # 房间名, 也是 events/ 下的子目录名
+    source: "http://192.168.1.101:8080/video"  # IP Webcam 的视频流地址 (改成你的手机 IP)
+    alert_url: "http://192.168.1.101:8765/play" # 同一台手机上的放声服务; 留空则主机放声
+    zones:
+      litter_box: []  # 用 python tools/calibrate_zone.py --camera living_room 画
+      ignore: []      # 食盆附近建议画进来, 猫"埋食物"的动作和扒地一样, 会误报
+
+  # ---- 二期: 猫转移阵地后, 逐个房间加手机 (去掉注释即可) ----
+  # - name: bedroom
+  #   source: "http://192.168.1.102:8080/video"
+  #   alert_url: "http://192.168.1.102:8765/play"
+  #   zones:
+  #     litter_box: []
+  #     ignore: []
+
+  # 调试: 不用手机, 直接用电脑摄像头
+  # - name: debug
+  #   source: 0
 
 detection:
-  model: yolov8n.pt  # 首次运行自动下载 (~6MB); 树莓派等弱设备也能跑
+  model: yolov8n.pt  # 首次运行自动下载 (~6MB)
   confidence: 0.4
-  imgsz: 640         # 弱设备可降到 480 / 320 提速
-  interval: 5        # 每 5 帧跑一次 YOLO, 其余帧沿用上次结果
+  imgsz: 640         # 主机性能弱可降到 480 / 320
+  interval: 5        # 每 5 帧跑一次 YOLO; 摄像头多了可调大 (8-10)
   miss_timeout: 1.5  # 连续 1.5 秒没检测到猫, 视为猫离开画面
 
 behavior:
@@ -25,16 +44,12 @@ behavior:
                        # both:    先扒地后蹲下才报 (误报最少但介入最晚)
 
 alert:
-  sound: sounds/alert.wav  # 强烈建议换成你自己吼猫的录音!
-  cooldown: 45             # 两次警报之间至少间隔 45 秒
+  sound: sounds/alert.wav  # 主机兜底用 (手机放声服务不可达时); 建议也换成吼声录音
+  cooldown: 45             # 全局冷却: 猫跨房间不会被连吼两次
   repeat: 2                # 每次触发连播 2 遍
-
-zones:
-  litter_box: []  # 猫砂盆区域, 用 python tools/calibrate_zone.py 画出来
-  ignore: []      # 忽略区域 (食盆附近猫会做"埋食物"动作, 容易误报)
 
 recording:
   enabled: true
-  dir: events      # 每次触发保存 snapshot.jpg + clip.mp4 (事件前8秒+后5秒)
+  dir: events      # 每路摄像头保存到 events/<房间名>/<时间戳>/
   pre_seconds: 8
   post_seconds: 5

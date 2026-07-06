@@ -1,7 +1,11 @@
 """标定工具: 在摄像头画面上用鼠标画出猫砂盆区域, 保存到 config.yaml.
 
 用法:
-    python tools/calibrate_zone.py --config config.yaml [--source 0]
+    # 单摄像头 (一期)
+    python tools/calibrate_zone.py --config config.yaml
+
+    # 多摄像头组网 (二期): 指定要标定哪个房间的摄像头
+    python tools/calibrate_zone.py --config config.yaml --camera living_room
 
 操作:
     鼠标左键     添加多边形顶点
@@ -13,20 +17,46 @@
 """
 
 import argparse
-import sys
 from pathlib import Path
 
 import cv2
 import numpy as np
 import yaml
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+def pick_camera(cfg, camera_name):
+    """返回 (视频源, 写回 zones 的回调). 兼容单/多摄像头两种配置写法."""
+    cams = cfg.get("cameras") or []
+    if cams:
+        names = [c.get("name", f"cam{i}") for i, c in enumerate(cams)]
+        if camera_name is None:
+            if len(cams) == 1:
+                idx = 0
+            else:
+                raise SystemExit(
+                    f"配置里有多个摄像头, 请用 --camera 指定一个: {names}")
+        else:
+            if camera_name not in names:
+                raise SystemExit(f"找不到摄像头 '{camera_name}', 可选: {names}")
+            idx = names.index(camera_name)
+
+        def save(zones):
+            cams[idx]["zones"] = zones
+        return cams[idx].get("source", 0), save
+
+    # 单摄像头写法: 顶层 camera + zones
+    def save(zones):
+        cfg["zones"] = zones
+    return cfg.get("camera", {}).get("source", 0), save
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.yaml")
-    parser.add_argument("--source", default=None)
+    parser.add_argument("--camera", default=None,
+                        help="多摄像头配置时, 要标定的摄像头 name")
+    parser.add_argument("--source", default=None,
+                        help="覆盖视频源 (调试用)")
     args = parser.parse_args()
 
     cfg_path = Path(args.config)
@@ -34,9 +64,9 @@ def main():
     if cfg_path.exists():
         cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
 
-    source = args.source
-    if source is None:
-        source = cfg.get("camera", {}).get("source", 0)
+    source, save_zones = pick_camera(cfg, args.camera)
+    if args.source is not None:
+        source = args.source
     if isinstance(source, str) and source.isdigit():
         source = int(source)
 
@@ -89,9 +119,7 @@ def main():
         elif key == ord("s"):
             if len(current) >= 3:
                 zones[zone_type[0]].append(list(current))
-            cfg.setdefault("zones", {})
-            cfg["zones"]["litter_box"] = zones["litter_box"]
-            cfg["zones"]["ignore"] = zones["ignore"]
+            save_zones(zones)
             cfg_path.write_text(
                 yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False),
                 encoding="utf-8")
