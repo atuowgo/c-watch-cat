@@ -1,0 +1,287 @@
+<title>watch-cat 实施计划</title>
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --surface: #FFFFFF;
+    --ink: #212723;
+    --muted: #616B64;
+    --line: #E3E7E1;
+    --accent: #177368;
+    --accent-soft: #E4F0EE;
+    --ok: #2F7D46;
+    --ok-soft: #E5F2E8;
+    --warn: #A96A0B;
+    --warn-soft: #F7EEDC;
+    --risk: #B0392E;
+    --risk-soft: #F8E7E4;
+    --code-bg: #F1F3EF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131715; --surface: #1B211E; --ink: #E4E9E5; --muted: #98A39C;
+      --line: #2B332E; --accent: #53C2B2; --accent-soft: #1D3330;
+      --ok: #79C98B; --ok-soft: #1E3325; --warn: #DFAC55; --warn-soft: #3A2E17;
+      --risk: #E28177; --risk-soft: #3D211E; --code-bg: #232B27;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #131715; --surface: #1B211E; --ink: #E4E9E5; --muted: #98A39C;
+    --line: #2B332E; --accent: #53C2B2; --accent-soft: #1D3330;
+    --ok: #79C98B; --ok-soft: #1E3325; --warn: #DFAC55; --warn-soft: #3A2E17;
+    --risk: #E28177; --risk-soft: #3D211E; --code-bg: #232B27;
+  }
+  :root[data-theme="light"] {
+    --bg: #FAFAF7; --surface: #FFFFFF; --ink: #212723; --muted: #616B64;
+    --line: #E3E7E1; --accent: #177368; --accent-soft: #E4F0EE;
+    --ok: #2F7D46; --ok-soft: #E5F2E8; --warn: #A96A0B; --warn-soft: #F7EEDC;
+    --risk: #B0392E; --risk-soft: #F8E7E4; --code-bg: #F1F3EF;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    line-height: 1.75;
+    margin: 0;
+    font-size: 15.5px;
+  }
+  .page { max-width: 920px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  h1, h2, h3 {
+    font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+    line-height: 1.35;
+    text-wrap: balance;
+    margin: 0;
+  }
+  h1 { font-size: 2rem; font-weight: 700; }
+  h2 {
+    font-size: 1.35rem; font-weight: 700;
+    margin: 3.5rem 0 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+  h2 .no { color: var(--accent); margin-right: .6rem; font-variant-numeric: tabular-nums; }
+  h3 { font-size: 1.08rem; font-weight: 700; margin: 2rem 0 .6rem; }
+  h3 .no { color: var(--accent); margin-right: .5rem; }
+  p { margin: 0 0 1rem; }
+  .prose { max-width: 44rem; }
+
+  .doc-meta {
+    display: flex; flex-wrap: wrap; gap: .5rem 1.5rem;
+    color: var(--muted); font-size: .85rem;
+    margin: .8rem 0 0;
+  }
+  .doc-meta b { color: var(--ink); font-weight: 600; }
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: .14em;
+    font-size: .75rem; color: var(--accent); font-weight: 600;
+    margin-bottom: .6rem;
+  }
+
+  .chip {
+    display: inline-block; padding: .1rem .6rem; border-radius: 999px;
+    font-size: .78rem; font-weight: 600; white-space: nowrap;
+  }
+  .chip.ok   { color: var(--ok);   background: var(--ok-soft); }
+  .chip.warn { color: var(--warn); background: var(--warn-soft); }
+  .chip.risk { color: var(--risk); background: var(--risk-soft); }
+  .chip.plan { color: var(--muted); background: var(--code-bg); }
+  .chip.dev  { color: var(--accent); background: var(--accent-soft); }
+
+  .tablewrap { overflow-x: auto; margin: 1.2rem 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { text-align: left; padding: .55rem .9rem; border-top: 1px solid var(--line); vertical-align: top; }
+  thead th { border-top: none; background: var(--code-bg); color: var(--muted); font-weight: 600; font-size: .8rem; white-space: nowrap; }
+  td.num, td.id { font-variant-numeric: tabular-nums; font-family: ui-monospace, "SF Mono", Consolas, monospace; white-space: nowrap; font-size: .82rem; }
+  td.id { color: var(--accent); font-weight: 600; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .84em; background: var(--code-bg);
+    padding: .1em .4em; border-radius: 4px;
+  }
+
+  /* 时间线 */
+  .gantt { margin: 1.4rem 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow-x: auto; }
+  .gantt-inner { min-width: 640px; padding: 1rem 1.2rem 1.2rem; }
+  .gantt-head { display: grid; grid-template-columns: 9.5rem repeat(8, 1fr); font-size: .72rem; color: var(--muted); margin-bottom: .4rem; }
+  .gantt-head span { text-align: center; }
+  .gantt-row { display: grid; grid-template-columns: 9.5rem repeat(8, 1fr); align-items: center; height: 2rem; }
+  .gantt-row .lbl { font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: .6rem; }
+  .gantt-bar { height: 1.1rem; border-radius: 4px; background: var(--accent); opacity: .85; }
+  .gantt-bar.shadow { background: var(--warn); }
+  .gantt-bar.cond { background: var(--muted); opacity: .5; }
+  .gantt-note { font-size: .78rem; color: var(--muted); margin-top: .6rem; }
+
+  .gate {
+    border-left: 3px solid var(--accent); background: var(--surface);
+    border-radius: 0 8px 8px 0; padding: .9rem 1.2rem; margin: 1rem 0;
+  }
+  .gate .t { font-weight: 700; margin-bottom: .2rem; }
+  .gate .t .tag { font-size: .72rem; color: var(--accent); margin-right: .5rem; letter-spacing: .1em; }
+  .gate p { margin: 0; font-size: .9rem; color: var(--muted); }
+  .gate.stop { border-left-color: var(--risk); }
+  .gate.stop .t .tag { color: var(--risk); }
+
+  ul { padding-left: 1.4rem; margin: 0 0 1rem; }
+  li { margin-bottom: .4rem; }
+  li::marker { color: var(--accent); }
+
+  .note {
+    background: var(--warn-soft); border-radius: 8px; padding: .9rem 1.2rem;
+    font-size: .9rem; margin: 1.2rem 0;
+  }
+  .note b:first-child { color: var(--warn); }
+
+  footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .82rem; }
+</style>
+
+<div class="page">
+  <div class="eyebrow">Implementation Plan</div>
+  <h1>watch-cat 猫如厕行为干预系统 · 实施计划</h1>
+  <div class="doc-meta">
+    <span>版本 <b>v1.0</b></span>
+    <span>日期 <b>2026-07-07</b></span>
+    <span>依据 <b>docs/product-design.md · docs/feasibility-review.html</b></span>
+    <span>执行人 <b>1 名（开发 / 部署 / 运维 / 铲屎官四合一）</b></span>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">1</span>总体安排</h2>
+  <p class="prose">一、二期代码已就绪，实施重心在<b>部署、标定与数据驱动的调优</b>，不在开发。总周期约 8 周（其中大量时间是影子模式的被动观察，实际动手时间很少）；机器人阶段为条件立项，不在本周期内排期。</p>
+
+  <div class="gantt"><div class="gantt-inner">
+    <div class="gantt-head"><span></span><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>W5</span><span>W6</span><span>W7</span><span>W8</span></div>
+    <div class="gantt-row"><span class="lbl">P0 准备</span><div class="gantt-bar" style="grid-column: 2 / 3; width: 55%;"></div></div>
+    <div class="gantt-row"><span class="lbl">M1 单点上线（影子）</span><div class="gantt-bar shadow" style="grid-column: 2 / 4;"></div></div>
+    <div class="gantt-row"><span class="lbl">M2 放声与调优</span><div class="gantt-bar" style="grid-column: 4 / 6;"></div></div>
+    <div class="gantt-row"><span class="lbl">M3 组网扩容（影子/路）</span><div class="gantt-bar shadow" style="grid-column: 5 / 7;"></div></div>
+    <div class="gantt-row"><span class="lbl">M4 数据闭环开发</span><div class="gantt-bar" style="grid-column: 6 / 10;"></div></div>
+    <div class="gantt-row"><span class="lbl">M5 机器人（条件立项）</span><div class="gantt-bar cond" style="grid-column: 9 / 10;"></div></div>
+    <div class="gantt-note">橙色 = 影子模式（系统运行但不出声，人工审核期）；灰色 = 条件触发，不在本周期承诺。M3 的开始时间实际由热力图数据触发，此处按典型情况排在 W4–W6。</div>
+  </div></div>
+
+  <p class="prose">贯穿全程的两条纪律：<b>① 任何一路摄像头放声之前必须先过影子模式审核</b>（新增节点也不例外）；<b>② 任何阈值调整必须回放回归视频集验证</b>（M2 起建立）。</p>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">2</span>P0 · 准备（第 1 周前半，约半天动手时间）</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>编号</th><th>任务</th><th>产出物 / 验收标准</th><th>估时</th></tr></thead>
+    <tbody>
+      <tr><td class="id">P0-1</td><td>硬件盘点：确定第一台旧手机（<b>优先安卓</b>、检查电池健康与鼓包迹象）、支架、原装充电器、常开主机</td><td>硬件清单勾选完毕；电池异常的手机直接淘汰（安全红线）</td><td class="num">0.5h</td></tr>
+      <tr><td class="id">P0-2</td><td>录制吼声素材：<b>3–5 段不同的</b>你平时吼猫的录音（防脱敏储备），转 wav</td><td><code>sounds/</code> 下 3–5 个 wav；手机外放试听音量足够</td><td class="num">0.5h</td></tr>
+      <tr><td class="id">P0-3</td><td>网络准备：路由器为手机绑定 DHCP 静态租约</td><td>手机重启后 IP 不变</td><td class="num">0.5h</td></tr>
+      <tr><td class="id">P0-4</td><td>主机环境：克隆仓库、venv、<code>pip install -r requirements.txt</code>、跑测试</td><td><code>pytest</code> 17 个用例全部通过；YOLO 权重成功下载</td><td class="num">0.5h</td></tr>
+      <tr><td class="id">P0-5</td><td>建立《作案台账》：日期 / 时间 / 房间 / 位置 / 是否被干预（一张共享表格即可）</td><td>台账模板就绪——这是 M3 布点和 M5 立项的<b>数据源头</b>，从今天起每次发现作案都记录</td><td class="num">0.5h</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">3</span>M1 · 一期单点上线，影子模式运行（W1–W2）</h2>
+
+  <h3><span class="no">3.1</span>部署（1 天）</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>编号</th><th>任务</th><th>产出物 / 验收标准</th><th>估时</th></tr></thead>
+    <tbody>
+      <tr><td class="id">M1-1</td><td>手机装 IP Webcam：720p、关音频、开始服务；对准案发高发区固定支架</td><td>主机浏览器能打开 <code>http://手机IP:8080/video</code></td><td class="num">0.5h</td></tr>
+      <tr><td class="id">M1-2</td><td>手机装 Termux（F-Droid 版）：<code>pkg install python mpv</code>，部署 <code>phone_sound_server.py</code> 与吼声 wav</td><td>浏览器访问 <code>http://手机IP:8765/play</code>，手机播出吼声</td><td class="num">1h</td></tr>
+      <tr><td class="id">M1-3</td><td>稳定性设置：两个 App 关电池优化、Termux 开唤醒锁、常插电、屏幕最暗；案发房间放小夜灯</td><td>锁屏 30 分钟后视频流与放声服务仍可访问</td><td class="num">0.5h</td></tr>
+      <tr><td class="id">M1-4</td><td>主机配置：<code>config.yaml</code> 填入两个地址，确认 <code>alert.enabled: false</code>（影子模式，当前默认值）</td><td>配置加载无报错</td><td class="num">0.2h</td></tr>
+      <tr><td class="id">M1-5</td><td>区域标定：<code>calibrate_zone.py</code> 画猫砂盆白名单；食盆若在画面内画 ignore 区</td><td>标定窗口叠加显示区域正确</td><td class="num">0.3h</td></tr>
+      <tr><td class="id">M1-6</td><td>试运行：<code>--show</code> 模式观察半小时，确认状态流转（moving → stationary → scratching）符合直觉</td><td>猫走动不误判静止；断 Wi-Fi 重连正常（现场拔一次电源验证）</td><td class="num">0.5h</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3><span class="no">3.2</span>影子观察期（5–10 天，每天 10 分钟）</h3>
+  <ul class="prose">
+    <li>每日回看 <code>events/living_room/</code>，在台账上逐条标注：<b>真前兆 / 误报（写明原因：玩耍、舔毛、埋食物…）/ 漏报</b>（地板有屎但无事件）。</li>
+    <li>按误报原因调参：玩耍误报 → 调高 <code>scratch_motion_threshold</code>；埋食物误报 → 补画 ignore 区；漏报 → 调低阈值或 <code>scratch_min_seconds</code>。</li>
+    <li>把有代表性的命中/误报片段另存为<b>回归视频集</b>（<code>tests/regression/</code>），此后每次调参用 <code>--source 片段.mp4</code> 回放全集。</li>
+  </ul>
+
+  <div class="gate"><div class="t"><span class="tag">晋级门槛 G1</span>影子模式 → 放声</div>
+  <p>连续 5 天误报 &lt; 1 次/天，且期间出现过 ≥ 2 次被正确捕获的真前兆。未达标则继续调参观察，<b>不设截止日期强行放声</b>——猫在系统被证明可靠前一声都不该听到。</p></div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">4</span>M2 · 放声与调优（W3–W4）</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>编号</th><th>任务</th><th>产出物 / 验收标准</th><th>类型</th></tr></thead>
+    <tbody>
+      <tr><td class="id">M2-1</td><td>开发：干预烈度阶梯（先轻"咳"声，10s 内行为未停再升级吼声）+ 每日触发上限</td><td>单测覆盖阶梯与上限逻辑；配置项文档化</td><td><span class="chip dev">开发 0.5d</span></td></tr>
+      <tr><td class="id">M2-2</td><td>开发：多段吼声随机播放（用 P0-2 的素材库）</td><td>alert 支持声音列表；phone_sound_server 支持多文件</td><td><span class="chip dev">开发 0.5d</span></td></tr>
+      <tr><td class="id">M2-3</td><td><code>alert.enabled: true</code>，第一周仅启用轻提示音级别</td><td>观察猫对轻声的反应，记入台账</td><td><span class="chip ok">部署</span></td></tr>
+      <tr><td class="id">M2-4</td><td>升级到吼声级别；记录<b>首次成功干预</b>（触发 → 猫回猫砂盆）的完整录像</td><td>标志性产出：首个端到端成功案例</td><td><span class="chip ok">部署</span></td></tr>
+      <tr><td class="id">M2-5</td><td>开发：Bark/Server酱推送（触发时附快照）+ systemd 守护 + 每日心跳</td><td>杀进程后自动拉起；手机收到推送</td><td><span class="chip dev">开发 1d</span></td></tr>
+      <tr><td class="id">M2-6</td><td>运维例行化：每日摸手机温度、看心跳；每周核对台账与事件日志</td><td>《运维清单》进入日常</td><td><span class="chip plan">运维</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="gate"><div class="t"><span class="tag">验收门槛 G2</span>一期验收</div>
+  <p>端到端延迟 ≤ 3s（录像时间戳核对）；干预成功率 &gt; 80%（触发后 2 分钟内进猫砂盆区）；误报维持 &lt; 1 次/天。<b>同时观察台账：它开始换房间作案了吗？</b>——这是 M3 的发令枪。</p></div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">5</span>M3 · 二期组网扩容（数据触发，典型 W4–W6）</h2>
+  <p class="prose">触发条件：台账/热力图显示某个新房间发生 ≥ 2 次作案。扩容是<b>标准化 SOP</b>，每个新房间重复一遍，代码零改动：</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>编号</th><th>任务</th><th>说明</th><th>估时</th></tr></thead>
+    <tbody>
+      <tr><td class="id">M3-1</td><td>新节点部署</td><td>复用 M1-1 ~ M1-5 清单（安卓机全流程；iPhone 只做推流，放声由外接音箱/邻近安卓机承担）</td><td class="num">2h/台</td></tr>
+      <tr><td class="id">M3-2</td><td>新路影子标定</td><td>新增 <code>cameras[]</code> 条目暂不参与放声，影子跑 2–3 天；画质噪点差异用<b>分路阈值覆盖</b>（<code>cameras[].behavior</code>）单独调</td><td class="num">3d 观察</td></tr>
+      <tr><td class="id">M3-3</td><td>组网联调演练</td><td>①跨房间冷却：人为让猫穿过两路视野，确认只吼一次；②故障隔离：拔掉一台手机电源，确认其他路不受影响、恢复后自动重连；③放声路由：每路触发时吼声来自本房间</td><td class="num">1h</td></tr>
+      <tr><td class="id">M3-4</td><td>主机容量核查</td><td>全部路数上线后 CPU 占用 &lt; 50%（超过则调大 <code>interval</code> 或降 <code>imgsz</code>）</td><td class="num">0.2h</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="gate"><div class="t"><span class="tag">晋级门槛 G3</span>每路独立过关</div>
+  <p>每个新节点各自满足 G1 标准后才在该路放声。<b>组网不改变纪律：新眼睛也要先学会不冤枉猫。</b></p></div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">6</span>M4 · 数据闭环（W6–W8）</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>编号</th><th>任务</th><th>产出物 / 验收标准</th><th>估时</th></tr></thead>
+    <tbody>
+      <tr><td class="id">M4-1</td><td>事件库与网页面板：SQLite 落库 + Flask 面板（各房间事件流、快照回看）</td><td>手机浏览器可回看任意事件</td><td class="num">2d</td></tr>
+      <tr><td class="id">M4-2</td><td>热力图自动化：作案时间 × 房间分布图，替代人工台账</td><td>面板展示；台账退役</td><td class="num">1d</td></tr>
+      <tr><td class="id">M4-3</td><td>干预成功率自动统计（触发后 2 分钟内是否进入猫砂盆区）</td><td>面板展示成功率/误报率周趋势——<b>脱敏的预警指标</b></td><td class="num">1d</td></tr>
+      <tr><td class="id">M4-4</td><td>存储滚动清理（events/ 保留最近 N GB）+ 摄像头被挡/移位检测告警</td><td>磁盘占用封顶；遮挡 10 分钟内收到推送</td><td class="num">1d</td></tr>
+      <tr><td class="id">M4-5</td><td>规划项收尾：区域坐标归一化存储、无猫时段噪声底自动标定、10Hz 运动量重采样</td><td>换机/换分辨率不再需要重标定与手工调阈值</td><td class="num">2d</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="gate"><div class="t"><span class="tag">验收门槛 G4</span>二期总验收（也是项目主目标）</div>
+  <p>连续 30 天统计：地板作案次数较基线下降 ≥ 80%；节点可用性 &gt; 95%；干预成功率无持续下滑（脱敏未发生）。达标后系统转入纯运维状态。</p></div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">7</span>M5 · 移动机器人（条件立项，独立项目周期 1–3 月）</h2>
+  <div class="gate stop"><div class="t"><span class="tag">立项门槛 G5</span>三个条件同时满足才启动</div>
+  <p>① 热力图积累 ≥ 1–2 个月数据（决定巡逻时段与路线先验）；② 二期已稳定通过 G4；③ 数据证明仍存在固定布控无法覆盖的死角作案。<b>若多点布控已解决问题，机器人不立项</b>——它是兴趣驱动的可选章节，不是必需品。</p></div>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>阶段</th><th>内容</th><th>关键验收</th><th>周期</th></tr></thead>
+    <tbody>
+      <tr><td class="id">R1-a</td><td>平台采购（RoboMaster EP）+ SDK 打通：遥控、取流、放声</td><td>手动遥控下完成一次"发现猫→靠近→放声"</td><td class="num">1–2 周</td></tr>
+      <tr><td class="id">R1-b</td><td><b>驯化期</b>：机器人静止共处 → 缓慢移动 → 短距跟随，观察猫应激反应</td><td>猫在机器人 2m 内正常进食/休息；出现持续应激则暂停并回退</td><td class="num">1–2 周</td></tr>
+      <tr><td class="id">R1-c</td><td>视觉伺服跟随：PID 保持 1.5–2.5m 距离；复用全部感知代码（猫静止则机器人静止）</td><td>客厅范围 10 分钟跟随不丢失、不碰撞</td><td class="num">2–3 周</td></tr>
+      <tr><td class="id">R1-d</td><td>避屎防线一/二落地：事件坐标 → 污染禁区（人工确认清理后解除）；只从侧前方接近、不横穿猫身后</td><td>模拟污染区（贴纸标记）测试：机器人 100% 绕行</td><td class="num">1 周</td></tr>
+      <tr><td class="id">R2</td><td>热区巡逻：按热力图在高危时段自动巡逻高发点</td><td>饭后/清晨时段自动出勤、其余趴窝充电</td><td class="num">2–3 周</td></tr>
+      <tr><td class="id">R3</td><td>（远期）激光雷达 SLAM + 自动回充 + 视觉识屎数据集</td><td>另行立项评审</td><td class="num">—</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- ============================================================ -->
+  <h2><span class="no">8</span>回滚与应急预案</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>触发情形</th><th>动作</th><th>恢复条件</th></tr></thead>
+    <tbody>
+      <tr><td>放声后误报明显伤猫（躲藏、应激、不敢进该房间）</td><td><b>立即</b> <code>alert.enabled: false</code> 退回影子模式</td><td>找到误报根因、回归集验证后，从轻提示音重新爬梯</td></tr>
+      <tr><td>调参后命中率下降</td><td>git 回滚 config，回放回归视频集定位</td><td>回归集全绿</td></tr>
+      <tr><td>某节点反复掉线/手机发烫异常</td><td>该路下线（注释掉 cameras 条目即可），不影响其余房间</td><td>更换设备后按 M3 SOP 重新上线</td></tr>
+      <tr><td>猫对吼声脱敏（成功率持续下滑）</td><td>切换未用过的录音素材；启用推送+远程真人对讲补强</td><td>成功率回升；长期靠 M4-3 指标预警</td></tr>
+      <tr><td>机器人引发持续应激</td><td>机器人停用，退回多点固定布控（系统仍完整可用）</td><td>驯化重新开始或放弃 M5</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note"><b>始终并行的治本线</b>：实施期间同步排查猫砂盆卫生/数量/位置与砂的质地；若作案是近期突发，先约兽医排除肠胃与泌尿问题。任何一周若治本线有改善（如换砂后作案骤降），优先固化治本成果，系统退居保险角色。</div>
+
+  <footer>watch-cat · 实施计划 v1.0 · 2026-07-07 · 仓库路径 docs/implementation-plan.html · 依据 docs/product-design.md 与 docs/feasibility-review.html</footer>
+</div>
